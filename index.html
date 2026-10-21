@@ -1,57 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Deteksi Jari</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body { font-family: Arial; text-align: center; background: #0f172a; color: white; padding: 20px; }
-button { background: #38bdf8; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 18px; margin-top: 20px; }
-canvas { border-radius: 20px; margin-top: 20px; border: 3px solid #38bdf8; max-width: 90%; }
-#label-container div { background: #1e293b; margin: 10px auto; padding: 12px; width: 80%; border-radius: 10px; font-size: 20px; }
-#status { color: #facc15; margin-top: 15px; }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deteksi Jari - Final Fix</title>
+<style>body{background:#0f172a;color:#fff;text-align:center;font-family:sans-serif}button{background:#38bdf8;padding:16px 32px;border-radius:12px;border:0;font-size:20px;font-weight:bold}canvas{border-radius:16px;margin-top:15px;border:2px solid #38bdf8}#label div{background:#1e293b;padding:10px;margin:8px auto;width:80%;border-radius:8px}</style>
 </head>
 <body>
 <h1>🤚 Deteksi Gestur Jari</h1>
-<p>Tugas Deep Learning - 3 Jari vs 5 Jari<br>MobileNet + Teachable Machine</p>
-<button id="btn" onclick="init()">Mulai Kamera</button>
-<div id="status"></div>
-<div id="webcam-container"></div>
-<div id="label-container"></div>
+<p>Tugas Deep Learning - 3 Jari vs 5 Jari</p>
+<button onclick="start()">MULAI KAMERA</button>
+<p id="log" style="color:yellow">Status: siap</p>
+<div id="cam"></div>
+<div id="label"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
 <script>
-    const URL = "./my_model/";
-    let model, webcam, labelContainer, maxPredictions;
-    async function init() {
-        document.getElementById("status").innerText = "⏳ Loading model... tunggu 5 detik";
-        document.getElementById("btn").style.display = "none";
-        try {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-            webcam = new tmImage.Webcam(300, 300, true);
-            await webcam.setup();
-            await webcam.play();
-            window.requestAnimationFrame(loop);
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
-            labelContainer = document.getElementById("label-container");
-            for (let i = 0; i < maxPredictions; i++) { labelContainer.appendChild(document.createElement("div")); }
-            document.getElementById("status").innerText = "✅ Kamera Aktif! Coba 3 jari / 5 jari";
-        } catch(e) {
-            document.getElementById("status").innerText = "❌ Error: " + e + " - cek folder my_model";
-            document.getElementById("btn").style.display = "inline-block";
-        }
-    }
-    async function loop() { webcam.update(); await predict(); window.requestAnimationFrame(loop); }
-    async function predict() {
-        const prediction = await model.predict(webcam.canvas);
-        for (let i = 0; i < maxPredictions; i++) {
-            labelContainer.childNodes[i].innerHTML = prediction[i].className + ": " + (prediction[i].probability * 100).toFixed(0) + "%";
-        }
-    }
+const URL = "https://karimu13.github.io/Deteksi-jari/my_model/";
+let model, webcam;
+async function start(){
+ document.getElementById('log').innerText = '⏳ Download model... tunggu 10 detik, jangan di-close';
+ try{
+   console.log('load', URL+'model.json');
+   model = await tmImage.load(URL+'model.json', URL+'metadata.json');
+   document.getElementById('log').innerText = '✅ Model ok! Nyalakan kamera...';
+   webcam = new tmImage.Webcam(320,320,true);
+   await webcam.setup();
+   await webcam.play();
+   document.getElementById('cam').appendChild(webcam.canvas);
+   window.requestAnimationFrame(loop);
+   document.getElementById('log').innerText = '✅ LIVE! Coba 3 jari / 5 jari';
+ }catch(e){
+   document.getElementById('log').innerText = '❌ GAGAL: '+e.message;
+   console.error(e);
+   alert('Error: '+e.message+'\nCoba pakai HP atau cek weights.bin');
+ }
+}
+async function loop(){ webcam.update(); await pred(); requestAnimationFrame(loop); }
+async function pred(){
+ const p = await model.predict(webcam.canvas);
+ const l = document.getElementById('label'); l.innerHTML='';
+ for(let i=0;i<p.length;i++){ l.innerHTML += '<div>'+p[i].className+' = '+(p[i].probability*100).toFixed(0)+'%</div>'; }
+}
 </script>
 </body>
 </html>
